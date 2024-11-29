@@ -14,10 +14,10 @@ describe('Login Page E2E Tests', () => {
   });
 
   test('Valid login', async () => {
+    await page.waitForTimeout(1000)
     await page.waitForSelector('input[name="email"]', { visible: true });
     await page.type('input[name="email"]', 'liza.saraviag@gmail.com');
     await page.type('input[name="password"]', 'Test12345');
-
     await page.evaluate(() => {
       [...document.querySelectorAll('button')].find(button => button.textContent === 'Sign In').click();
     });

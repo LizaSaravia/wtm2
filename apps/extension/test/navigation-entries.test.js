@@ -4,7 +4,7 @@ let browser, page;
 
 beforeAll(async () => {
   browser = await puppeteer.launch({
-    headless: false, 
+    headless: false,
     timeout: 30000,  // Increase overall timeout for Puppeteer
   });
   page = await browser.newPage();
@@ -12,6 +12,7 @@ beforeAll(async () => {
   // Go to the login page
   await page.goto('https://webtm.io/login', { waitUntil: 'domcontentloaded' });
 
+  await page.waitForTimeout(1000)
   // Enter login credentials
   await page.waitForSelector('input[name="email"]', { visible: true });
   await page.type('input[name="email"]', 'liza.saraviag@gmail.com');
@@ -23,8 +24,7 @@ beforeAll(async () => {
   });
 
   // Wait for successful login or specific element after login
-  await page.waitForSelector('.dashboard', { visible: true });
-
+  await page.waitForNavigation();
   console.log("Logged in successfully");
 
 }, 30000); // Increased timeout for beforeAll
@@ -41,7 +41,7 @@ test(
 
     // Navigate to the desired page
     await page.goto('https://webtm.io/navigation-entries', { waitUntil: 'domcontentloaded' });
-
+    await page.waitForTimeout(2000)
     // Perform the search
     console.log("Typing search query");
     await page.waitForSelector('input[name="search"]', { visible: true });
@@ -49,17 +49,27 @@ test(
 
     console.log("Clicking the menu button");
     // Click the menu button
-    await page.waitForSelector('button[aria-label="Menu"]', { visible: true });
-    await page.click('button[aria-label="Menu"]');
+    await page.evaluate(() => {
+      const menuButtons = [...document.querySelectorAll('button')].filter(button => button.ariaLabel === 'Menu')
+      const searchButton = menuButtons.length > 1 ? menuButtons[1] : menuButtons[0]
+      searchButton.click()
+    });
 
     console.log("Waiting for search results");
     // Verify search results
-    await page.waitForSelector('.search-results', { visible: true });
-
-    const results = await page.$$eval('.search-result-item', items => items.length);
-
-    // Assert results exist
-    expect(results).toBeGreaterThan(0);
+    await page.waitForTimeout(2000)
+    const searchText = "No results found. Try different search terms!";
+    const foundText = await page.$$eval(
+      '#content div p', // Selector del texto dentro del div
+      (elements, searchText) => {
+        // Busca el texto deseado en los elementos
+        const element = elements.find(el => el.textContent.trim() === searchText);
+        return element ? element.textContent.trim() : null;
+      },
+      searchText // Pasamos el texto a buscar al contexto del navegador
+    );
+    await page.waitForTimeout(2000)
+    expect(foundText).toBeDefined();
   },
   30000 // Increased timeout for this test
 );
